@@ -142,6 +142,7 @@ void FrameStreamServer::onClientTextMessage(const QString &msg)
 {
     if (msg == QStringLiteral("ack")) {
         m_clientReady = true;
+        m_frameAvailable.wakeOne();  // Wake conversion thread to process waiting frame
     }
 }
 
@@ -160,30 +161,33 @@ void FrameStreamServer::onBroadcast(const QByteArray &message)
 
 void FrameStreamServer::conversionThreadMain()
 {
+    m_frameMutex.lock();
     while (!m_stopThread) {
-        m_frameMutex.lock();
-        while (!m_bufferReady) {
+        // Wait for a frame to be available
+        while (!m_bufferReady && !m_stopThread) {
             m_frameAvailable.wait(&m_frameMutex);
-            if (!m_bufferReady && m_stopThread) {
-                m_frameMutex.unlock();
-                return;
-            }
+        }
+        if (m_stopThread) break;
+
+        // Frame available — but only take it if client can receive
+        if (!m_clientReady || m_broadcastPending) {
+            // Can't send — leave buffer in place and wait.
+            // pushFrame will replace it with a newer frame at camera rate,
+            // releasing the old buffer's callback each time. This avoids
+            // the tight busy-loop that occurred when we took + released
+            // the buffer immediately.
+            m_frameAvailable.wait(&m_frameMutex);
+            continue;  // Re-check all conditions from top
         }
 
+        // Take the buffer
         BufferWrapper buffer = m_nextBuffer;
         auto doneCallback = m_nextDoneCallback;
         m_nextDoneCallback = nullptr;
         m_bufferReady = false;
         m_frameMutex.unlock();
 
-        // Skip conversion entirely if client isn't ready or broadcast pending
-        if (!m_clientReady || m_broadcastPending) {
-            if (doneCallback) {
-                doneCallback();
-            }
-            continue;
-        }
-
+        // Convert frame to QImage
         QImage convertedImage;
         int result = ImageTransform::ConvertFrame(
             buffer.data, buffer.length,
@@ -196,6 +200,7 @@ void FrameStreamServer::conversionThreadMain()
         }
 
         if (result != 0 || convertedImage.isNull()) {
+            m_frameMutex.lock();
             continue;
         }
 
@@ -223,5 +228,8 @@ void FrameStreamServer::conversionThreadMain()
             emit broadcastReady(message);
         }
         emit frameConverted(buffer.frameID, buffer.width, buffer.height);
+
+        m_frameMutex.lock();
     }
+    m_frameMutex.unlock();
 }
