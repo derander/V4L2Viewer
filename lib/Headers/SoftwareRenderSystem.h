@@ -30,10 +30,12 @@ public:
 signals:
     void RequestZoom(QPointF center, bool zoomIn);
     void PixelClicked(QPointF pos);
+    void DoubleClicked();
 
 protected slots:
     void ZoomRequestedByWidget(QPointF center, bool zoomIn);
     void ImageClicked(QPointF point);
+    void ImageDoubleClicked();
 
 
 private:

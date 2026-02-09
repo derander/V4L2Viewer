@@ -468,3 +468,9 @@ void EGLRenderWidget::mousePressEvent(QMouseEvent *event)
 
     emit clicked(QPointF(point.x() * frameWidth, point.y() * frameHeight));
 }
+
+void EGLRenderWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    emit doubleClicked();
+}

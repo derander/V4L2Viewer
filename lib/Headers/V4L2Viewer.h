@@ -113,6 +113,7 @@ protected:
 
     std::unique_ptr<RenderSystem> m_RenderSystem;
     QWidget *m_pImageView = nullptr;
+    bool m_bIsFullScreen = false;
 
     // Stores last displayed frame in case we need it for saving a frame or picking a pixel's color
     QMutex lastFrameMutex;
@@ -223,6 +224,7 @@ protected slots:
 
     void OnImageClicked(QPointF point);
     void OnZoomRequested(QPointF center, bool zoomIn);
+    void OnImageDoubleClicked();
     // The event handler to resize the image to fit to window
     void OnZoomFitButtonClicked();
     // The slot function is called when the zoom in buton is clicked

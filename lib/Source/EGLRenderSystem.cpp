@@ -35,6 +35,7 @@ EGLRenderSystem::EGLRenderSystem()
     connect(verticalScrollbar, SIGNAL(valueChanged(int)), this, SLOT(ScrollChanged()));
     connect(glWidget, SIGNAL(requestZoom(QPointF,bool)), this, SLOT(ZoomRequestedByWidget(QPointF,bool)));
     connect(glWidget, SIGNAL(clicked(QPointF)), this, SLOT(ImageClicked(QPointF)));
+    connect(glWidget, SIGNAL(doubleClicked()), this, SLOT(ImageDoubleClicked()));
 }
 
 EGLRenderSystem::~EGLRenderSystem() {
@@ -46,6 +47,10 @@ void EGLRenderSystem::ZoomRequestedByWidget(QPointF center, bool zoomIn) {
 
 void EGLRenderSystem::ImageClicked(QPointF point) {
     emit PixelClicked(point);
+}
+
+void EGLRenderSystem::ImageDoubleClicked() {
+    emit DoubleClicked();
 }
 
 void EGLRenderSystem::SetScaleFactor(double scale)

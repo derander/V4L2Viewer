@@ -139,6 +139,7 @@ V4L2Viewer::V4L2Viewer(QWidget *parent, Qt::WindowFlags flags)
     m_pImageView->hide();
     connect(m_RenderSystem.get(), SIGNAL(RequestZoom(QPointF, bool)), this, SLOT(OnZoomRequested(QPointF, bool)));
     connect(m_RenderSystem.get(), SIGNAL(PixelClicked(QPointF)), this, SLOT(OnImageClicked(QPointF)));
+    connect(m_RenderSystem.get(), SIGNAL(DoubleClicked()), this, SLOT(OnImageDoubleClicked()));
 
 
     // connect the menu actions
@@ -282,9 +283,6 @@ V4L2Viewer::V4L2Viewer(QWidget *parent, Qt::WindowFlags flags)
 
     ui.m_allFeaturesDockWidget->setWidget(m_pEnumerationControlWidget);
     ui.m_allFeaturesDockWidget->hide();
-    ui.m_allFeaturesDockWidget->setStyleSheet("QDockWidget {"
-                                                "titlebar-close-icon: url(:/V4L2Viewer/Cross128.png);"
-                                                "titlebar-normal-icon: url(:/V4L2Viewer/resize4.png);}");
 
     LOG_EX(QString("V4L2Viewer git commit = %1").arg(GIT_VERSION).toStdString().c_str());
 
@@ -1427,6 +1425,22 @@ void V4L2Viewer::OnZoomRequested(QPointF center, bool zoomIn)
         OnZoomIn();
     } else {
         OnZoomOut();
+    }
+}
+
+void V4L2Viewer::OnImageDoubleClicked()
+{
+    if (!m_bIsFullScreen) {
+        m_pImageView->setParent(nullptr);
+        m_pImageView->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+        m_pImageView->showFullScreen();
+        m_bIsFullScreen = true;
+    } else {
+        m_pImageView->setParent(this);
+        m_pImageView->setWindowFlags(Qt::Widget);
+        ui.m_OutputHolder->layout()->replaceWidget(ui.m_LogoScrollArea, m_pImageView);
+        m_pImageView->show();
+        m_bIsFullScreen = false;
     }
 }
 

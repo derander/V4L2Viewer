@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V4L2 Viewer</title>
+    <link rel="stylesheet" href="qrc:/web/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <title-bar :is-streaming="isStreaming"></title-bar>
+
+        <div class="main-layout">
+            <sidebar
+                :cameras="cameras"
+                :selected-camera="selectedCamera"
+                :is-open="isOpen"
+                @select-camera="selectedCamera = $event"
+                @toggle-open="toggleOpen"
+            ></sidebar>
+
+            <div class="viewport-area">
+                <toolbar
+                    :is-open="isOpen"
+                    :is-streaming="isStreaming"
+                    :zoom="zoom"
+                    @start-stream="startStream"
+                    @stop-stream="stopStream"
+                    @zoom-in="zoomIn"
+                    @zoom-out="zoomOut"
+                    @zoom-fit="zoomFit"
+                    @snapshot="saveImage"
+                    @flip-x="toggleFlipX"
+                    @flip-y="toggleFlipY"
+                ></toolbar>
+
+                <frame-viewer
+                    ref="frameViewer"
+                    :is-streaming="isStreaming"
+                    :frame-stream-port="frameStreamPort"
+                    :zoom="zoom"
+                    :fps="fps"
+                    :frame-info="frameInfo"
+                    :pixel-formats="pixelFormats"
+                ></frame-viewer>
+            </div>
+
+            <control-panel
+                v-if="isOpen"
+                :is-streaming="isStreaming"
+                :controls="controls"
+                :exposure="exposure"
+                :gain="gain"
+                :gamma="gammaCtrl"
+                :brightness="brightness"
+                :white-balance="whiteBalance"
+                :frame-rate="frameRate"
+                :pixel-formats="pixelFormats"
+                :frame-sizes="frameSizes"
+                :crop="crop"
+                @set-exposure="setExposure"
+                @set-auto-exposure="setAutoExposure"
+                @set-gain="setGain"
+                @set-auto-gain="setAutoGain"
+                @set-gamma="setGamma"
+                @set-brightness="setBrightness"
+                @set-auto-white-balance="setAutoWhiteBalance"
+                @set-frame-rate="setFrameRate"
+                @set-frame-rate-auto="setFrameRateAuto"
+                @set-pixel-format="setPixelFormat"
+                @set-frame-size="setFrameSizeByIndex"
+                @set-crop="setCrop"
+                @set-control-int="setControlInt"
+                @set-control-int64="setControlInt64"
+                @set-control-bool="setControlBool"
+                @set-control-button="setControlButton"
+                @set-control-list="setControlList"
+                @set-control-int-list="setControlIntList"
+                @set-control-string="setControlString"
+            ></control-panel>
+        </div>
+
+        <status-bar
+            :fps="fps"
+            :frame-info="frameInfo"
+            :status="statusText"
+        ></status-bar>
+    </div>
+
+    <script src="qrc:/web/js/vue.global.prod.js"></script>
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script src="qrc:/web/js/icons.js"></script>
+    <script src="qrc:/web/js/camera-channel.js"></script>
+    <script src="qrc:/web/js/frame-renderer.js"></script>
+    <script src="qrc:/web/js/app.js"></script>
+</body>
+</html>

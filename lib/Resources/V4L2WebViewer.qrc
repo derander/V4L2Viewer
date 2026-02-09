@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/web">
+        <file alias="index.html">web/index.html</file>
+        <file alias="css/style.css">web/css/style.css</file>
+        <file alias="js/vue.global.prod.js">web/js/vue.global.prod.js</file>
+        <file alias="js/icons.js">web/js/icons.js</file>
+        <file alias="js/app.js">web/js/app.js</file>
+        <file alias="js/camera-channel.js">web/js/camera-channel.js</file>
+        <file alias="js/frame-renderer.js">web/js/frame-renderer.js</file>
+        <file alias="fonts/Inter-Regular.woff2">web/fonts/Inter-Regular.woff2</file>
+        <file alias="fonts/Inter-Medium.woff2">web/fonts/Inter-Medium.woff2</file>
+        <file alias="fonts/Inter-SemiBold.woff2">web/fonts/Inter-SemiBold.woff2</file>
+    </qresource>
+</RCC>

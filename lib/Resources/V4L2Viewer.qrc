@@ -49,4 +49,7 @@
     <qresource prefix="/Translations">
         <file>Translations/german.qm</file>
     </qresource>
+    <qresource prefix="/Styles">
+        <file>styles/modern-flat.qss</file>
+    </qresource>
 </RCC>

@@ -31,7 +31,7 @@ SelectSubDeviceDialog::SelectSubDeviceDialog(QVector<QString> const& subDeviceLi
 
     {
     QPalette palette = prompt->palette();
-    palette.setColor(QPalette::Active, QPalette::WindowText, Qt::white);
+    palette.setColor(QPalette::Active, QPalette::WindowText, QColor("#e0e0e0"));
     prompt->setPalette(palette);
     }
 
@@ -53,7 +53,7 @@ SelectSubDeviceDialog::SelectSubDeviceDialog(QVector<QString> const& subDeviceLi
             checkBoxText += QString(" (%1)").arg(name.c_str());
         }
         QCheckBox* checkBox = new QCheckBox(checkBoxText);
-        checkBox->setStyleSheet("background-color: white;");
+        checkBox->setStyleSheet("background-color: #1f2b47; color: #e0e0e0;");
         m_subDeviceCheckBoxes.push_back(checkBox);
         selectionLayout->addWidget(checkBox);
     }

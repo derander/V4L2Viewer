@@ -13,6 +13,7 @@ private:
 signals:
   void RequestZoom(QPointF center, bool zoomIn);
   void Clicked(QPointF point);
+  void DoubleClicked();
   void SetPixmapSignal(QPixmap pixmap);
 
 private slots:
@@ -26,6 +27,7 @@ public:
 
   void wheelEvent(QWheelEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
+  void mouseDoubleClickEvent(QMouseEvent *event) override;
 };
 
 #endif

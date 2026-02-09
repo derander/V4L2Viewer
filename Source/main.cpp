@@ -18,13 +18,58 @@
 
 #include "V4L2Viewer.h"
 #include <QDebug>
+#include <QFile>
+#include <QStyleFactory>
+#include <QCommandLineParser>
 #include "q_v4l2_ext_ctrl.h"
+
+#include <signal.h>
+
+#ifdef HAS_WEB_UI
+#include "WebViewerWindow.h"
+#include <QWebEngineView>
+#endif
+
+static void signalHandler(int)
+{
+    QCoreApplication::quit();
+}
 
 int main( int argc, char *argv[] )
 {
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
     qRegisterMetaType<v4l2_ext_control>();
     QApplication a( argc, argv );
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("V4L2 Viewer");
+    parser.addHelpOption();
+#ifdef HAS_WEB_UI
+    QCommandLineOption webOption("web", "Use web-based UI");
+    parser.addOption(webOption);
+#endif
+    parser.process(a);
+
+#ifdef HAS_WEB_UI
+    if (parser.isSet(webOption)) {
+        Q_INIT_RESOURCE(V4L2WebViewer);
+        WebViewerWindow w;
+        w.show();
+        return a.exec();
+    }
+#endif
+
+    // Original widget UI
+    a.setStyle(QStyleFactory::create("Fusion"));
     Q_INIT_RESOURCE(V4L2Viewer);
+
+    QFile styleFile(":/Styles/styles/modern-flat.qss");
+    if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
+        a.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
+        styleFile.close();
+    }
+
     V4L2Viewer w;
     w.show();
     return a.exec();

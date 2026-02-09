@@ -9,8 +9,8 @@ SoftwareRenderWidget::SoftwareRenderWidget(QWidget *parent)
     m_Scene->addItem(&m_PixmapItem);
     connect(this, SIGNAL(SetPixmapSignal(QPixmap)), this, SLOT(OnSetPixmap(QPixmap)));
     setStyleSheet("QGraphicsView {"
-                  "  background-color: rgb(19,20,21);"
-                  "  border:20px;"
+                  "  background-color: #010409;"
+                  "  border: none;"
                   "}");
   }
 
@@ -52,4 +52,10 @@ void SoftwareRenderWidget::mousePressEvent(QMouseEvent *event)
     QPointF imageScenePointF = mapToScene(mousePos);
 
     emit Clicked(imageScenePointF);
+}
+
+void SoftwareRenderWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    emit DoubleClicked();
 }

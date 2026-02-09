@@ -31,11 +31,13 @@ public:
 signals:
     void RequestZoom(QPointF center, bool zoomIn);
     void PixelClicked(QPointF pos);
+    void DoubleClicked();
     void EffectiveSizeChanged();
 
 protected slots:
     void ZoomRequestedByWidget(QPointF center, bool zoomIn);
     void ImageClicked(QPointF point);
+    void ImageDoubleClicked();
 
 private slots:
     void UpdateScrollbars();

@@ -126,6 +126,8 @@ list(APPEND QT_RESOURCES
   ${RESOURCES_PATH}/V4L2Viewer.qrc
 )
 
+option(BUILD_WEB_UI "Build with Qt WebEngine hybrid UI" ON)
+
 find_package(Qt6 COMPONENTS Core Widgets Gui OpenGL OpenGLWidgets QUIET)
 if(Qt6_FOUND)
   list(APPEND QT_LIBRARIES
@@ -136,6 +138,24 @@ if(Qt6_FOUND)
     Qt6::OpenGLWidgets
     Threads::Threads
   )
+
+  if(BUILD_WEB_UI)
+    find_package(Qt6 COMPONENTS WebEngineWidgets WebChannel WebSockets REQUIRED)
+    list(APPEND QT_LIBRARIES Qt6::WebEngineWidgets Qt6::WebChannel Qt6::WebSockets)
+
+    list(APPEND HEADER_FILES
+      ${HEADERS_PATH}/CameraBridge.h
+      ${HEADERS_PATH}/WebViewerWindow.h
+      ${HEADERS_PATH}/FrameStreamServer.h
+    )
+    list(APPEND SOURCE_FILES
+      ${SOURCES_PATH}/CameraBridge.cpp
+      ${SOURCES_PATH}/WebViewerWindow.cpp
+      ${SOURCES_PATH}/FrameStreamServer.cpp
+    )
+    list(APPEND QT_RESOURCES ${RESOURCES_PATH}/V4L2WebViewer.qrc)
+  endif()
+
   qt6_add_resources(RESOURCES ${QT_RESOURCES})
 else()
   find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED)
@@ -145,6 +165,24 @@ else()
     Qt5::Widgets
     Threads::Threads
   )
+
+  if(BUILD_WEB_UI)
+    find_package(Qt5 COMPONENTS WebEngineWidgets WebChannel WebSockets REQUIRED)
+    list(APPEND QT_LIBRARIES Qt5::WebEngineWidgets Qt5::WebChannel Qt5::WebSockets)
+
+    list(APPEND HEADER_FILES
+      ${HEADERS_PATH}/CameraBridge.h
+      ${HEADERS_PATH}/WebViewerWindow.h
+      ${HEADERS_PATH}/FrameStreamServer.h
+    )
+    list(APPEND SOURCE_FILES
+      ${SOURCES_PATH}/CameraBridge.cpp
+      ${SOURCES_PATH}/WebViewerWindow.cpp
+      ${SOURCES_PATH}/FrameStreamServer.cpp
+    )
+    list(APPEND QT_RESOURCES ${RESOURCES_PATH}/V4L2WebViewer.qrc)
+  endif()
+
   qt5_add_resources(RESOURCES ${QT_RESOURCES})
 endif()
 #add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x050F00)
@@ -164,6 +202,10 @@ add_library(V4L2ViewerLib STATIC ${SOURCE_FILES} ${HEADER_FILES} ${RESOURCES})
 
 if(SOFTWARE_RENDER_DEFAULT)
   target_compile_definitions(V4L2ViewerLib PRIVATE SOFTWARE_RENDER_DEFAULT=1)
+endif()
+
+if(BUILD_WEB_UI)
+  target_compile_definitions(V4L2ViewerLib PUBLIC HAS_WEB_UI=1)
 endif()
 
 if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)

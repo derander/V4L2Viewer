@@ -72,6 +72,7 @@ public:
     void setScroll(int x, int y);
     void wheelEvent(QWheelEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
     static bool canRender(uint32_t pixelFormat);
 
@@ -79,6 +80,7 @@ signals:
     void resized();
     void requestZoom(QPointF center, bool zoomIn);
     void clicked(QPointF point);
+    void doubleClicked();
 };
 
 #endif

@@ -16,7 +16,6 @@ SoftwareRenderSystem::SoftwareRenderSystem()
   , nextDoneCallback(&DoNothing)
 {
     scrollArea->setLayout(layout);
-    scrollArea->setStyleSheet("QScrollArea{border:none;}");
     layout->addWidget(widget);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -27,6 +26,7 @@ SoftwareRenderSystem::SoftwareRenderSystem()
 
     connect(widget, SIGNAL(RequestZoom(QPointF,bool)), this, SLOT(ZoomRequestedByWidget(QPointF,bool)));
     connect(widget, SIGNAL(Clicked(QPointF)), this, SLOT(ImageClicked(QPointF)));
+    connect(widget, SIGNAL(DoubleClicked()), this, SLOT(ImageDoubleClicked()));
 }
 
 SoftwareRenderSystem::~SoftwareRenderSystem() {
@@ -41,6 +41,10 @@ void SoftwareRenderSystem::ZoomRequestedByWidget(QPointF center, bool zoomIn) {
 
 void SoftwareRenderSystem::ImageClicked(QPointF point) {
     emit PixelClicked(point);
+}
+
+void SoftwareRenderSystem::ImageDoubleClicked() {
+    emit DoubleClicked();
 }
 
 void SoftwareRenderSystem::ConversionThreadMain() {
