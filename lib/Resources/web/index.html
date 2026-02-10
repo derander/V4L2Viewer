@@ -15,8 +15,10 @@
                 :cameras="cameras"
                 :selected-camera="selectedCamera"
                 :is-open="isOpen"
+                :pinned="sidebarPinned"
                 @select-camera="selectedCamera = $event"
                 @toggle-open="toggleOpen"
+                @toggle-pin="sidebarPinned = !sidebarPinned"
             ></sidebar>
 
             <div class="viewport-area">
@@ -24,6 +26,8 @@
                     :is-open="isOpen"
                     :is-streaming="isStreaming"
                     :zoom="zoom"
+                    :flip-x="flipX"
+                    :flip-y="flipY"
                     @start-stream="startStream"
                     @stop-stream="stopStream"
                     @zoom-in="zoomIn"
@@ -39,6 +43,8 @@
                     :is-streaming="isStreaming"
                     :frame-stream-port="frameStreamPort"
                     :zoom="zoom"
+                    :flip-x="flipX"
+                    :flip-y="flipY"
                     :fps="fps"
                     :frame-info="frameInfo"
                     :pixel-formats="pixelFormats"
@@ -48,6 +54,7 @@
             <control-panel
                 v-if="isOpen"
                 :is-streaming="isStreaming"
+                :pinned="controlsPinned"
                 :controls="controls"
                 :exposure="exposure"
                 :gain="gain"
@@ -77,6 +84,7 @@
                 @set-control-list="setControlList"
                 @set-control-int-list="setControlIntList"
                 @set-control-string="setControlString"
+                @toggle-pin="controlsPinned = !controlsPinned"
             ></control-panel>
         </div>
 

@@ -91,6 +91,7 @@ public:
 
     // Utility
     Q_INVOKABLE QJsonObject saveImage(const QString &path, const QString &format);
+    Q_INVOKABLE QJsonObject saveImageDialog();
     Q_INVOKABLE QJsonObject getStats();
 
 signals:
@@ -161,9 +162,10 @@ private:
     BufferWrapper m_lastFrame;
     std::function<void()> m_lastDoneCallback;
 
-    bool m_blockingMode = false;
-    IO_METHOD_TYPE m_ioMethod = IO_METHOD_MMAP;
+    bool m_blockingMode = true;
+    IO_METHOD_TYPE m_ioMethod = IO_METHOD_USERPTR;
     int32_t m_numFrames = 5;
+    int m_savedFrameCounter = 0;
 
     // Throttled frame info — updated per-frame, emitted on stats timer
     std::atomic<uint64_t> m_latestFrameId{0};

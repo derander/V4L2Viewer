@@ -3,7 +3,9 @@
 #include "ImageTransform.h"
 #include "V4L2Helper.h"
 
+#include <QDir>
 #include <QFile>
+#include <QFileDialog>
 #include <QJsonDocument>
 #include <QMutexLocker>
 
@@ -853,6 +855,60 @@ QJsonObject CameraBridge::saveImage(const QString &path, const QString &format)
     }
 
     return makeResult(false, "Unknown format (use 'png' or 'raw')");
+}
+
+QJsonObject CameraBridge::saveImageDialog()
+{
+    QMutexLocker locker(&m_lastFrameMutex);
+    if (!m_lastDoneCallback) {
+        return makeResult(false, "No frame available");
+    }
+
+    // Convert while we still hold the buffer
+    QImage convertedImage;
+    ImageTransform::ConvertFrame(m_lastFrame.data, m_lastFrame.length,
+                                 m_lastFrame.width, m_lastFrame.height,
+                                 m_lastFrame.pixelFormat,
+                                 m_lastFrame.payloadSize, m_lastFrame.bytesPerLine,
+                                 convertedImage);
+
+    QByteArray rawData(reinterpret_cast<const char *>(m_lastFrame.data), m_lastFrame.length);
+    locker.unlock();
+
+    QWidget *parentWidget = qobject_cast<QWidget *>(parent());
+    QString defaultName = QDir::homePath() + "/Frame_" +
+                          QString::number(m_savedFrameCounter) + ".png";
+
+    QString fullPath = QFileDialog::getSaveFileName(
+        parentWidget, tr("Save Snapshot"), defaultName, "*.png *.raw");
+
+    if (fullPath.isEmpty()) {
+        return makeResult(false, "Save cancelled");
+    }
+
+    if (fullPath.endsWith(".raw", Qt::CaseInsensitive)) {
+        QFile file(fullPath);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(rawData);
+            file.close();
+            m_savedFrameCounter++;
+            QJsonObject result = makeResult(true);
+            result["path"] = fullPath;
+            return result;
+        }
+        return makeResult(false, "Failed to write raw file");
+    } else {
+        if (!fullPath.endsWith(".png", Qt::CaseInsensitive)) {
+            fullPath += ".png";
+        }
+        if (convertedImage.save(fullPath, "PNG")) {
+            m_savedFrameCounter++;
+            QJsonObject result = makeResult(true);
+            result["path"] = fullPath;
+            return result;
+        }
+        return makeResult(false, "Failed to save PNG");
+    }
 }
 
 // --- Stats ---

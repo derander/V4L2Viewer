@@ -144,6 +144,37 @@ body {
     overflow: hidden;
 }
 
+/* ===== PIN BUTTON ===== */
+.pin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.pin-btn .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.pin-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+}
+
+.pin-btn.pinned {
+    color: var(--accent-blue);
+}
+
 /* ===== LEFT SIDEBAR ===== */
 .sidebar {
     width: var(--sidebar-width);
@@ -152,6 +183,12 @@ body {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    transition: width 0.2s ease;
+}
+
+.sidebar.collapsed {
+    width: 40px;
+    overflow: hidden;
 }
 
 .sidebar-header {
@@ -159,12 +196,29 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
+.sidebar.collapsed .sidebar-header {
+    padding: 8px 6px;
+    border-bottom: none;
+}
+
+.sidebar-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.sidebar.collapsed .sidebar-header-row {
+    justify-content: center;
+    margin-bottom: 0;
+}
+
 .sidebar-header h3 {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin: 0;
 }
 
 .search-box {
@@ -365,6 +419,16 @@ body {
     background: rgba(233,69,96,0.2);
 }
 
+.tool-btn.active {
+    background: rgba(100,180,255,0.2);
+    border-color: rgba(100,180,255,0.4);
+    color: #7db8ff;
+}
+
+.tool-btn.active:hover:not(:disabled) {
+    background: rgba(100,180,255,0.3);
+}
+
 .zoom-control {
     display: flex;
     align-items: center;
@@ -486,6 +550,34 @@ body {
     flex-direction: column;
     flex-shrink: 0;
     overflow-y: auto;
+    transition: width 0.2s ease;
+}
+
+.right-panel.collapsed {
+    width: 40px;
+    overflow: hidden;
+}
+
+.panel-pin-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.right-panel.collapsed .panel-pin-header {
+    padding: 8px 6px;
+    justify-content: center;
+    border-bottom: none;
+}
+
+.panel-pin-header h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin: 0;
 }
 
 .panel-section {

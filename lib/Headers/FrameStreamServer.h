@@ -4,11 +4,11 @@
 #include <QObject>
 #include <QWebSocketServer>
 #include <QWebSocket>
-#include <QMutex>
-#include <QWaitCondition>
 #include <QImage>
 
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include <functional>
 
@@ -50,8 +50,8 @@ private:
     std::atomic<bool> m_broadcastPending{false};
     std::atomic<bool> m_clientReady{true};
 
-    QMutex m_frameMutex;
-    QWaitCondition m_frameAvailable;
+    std::mutex m_frameMutex;
+    std::condition_variable m_frameAvailable;
     BufferWrapper m_nextBuffer;
     std::function<void()> m_nextDoneCallback;
     bool m_bufferReady = false;

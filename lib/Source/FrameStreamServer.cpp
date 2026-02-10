@@ -2,7 +2,6 @@
 #include "ImageTransform.h"
 
 #include <QBuffer>
-#include <QMutexLocker>
 
 FrameStreamServer::FrameStreamServer(QObject *parent)
     : QObject(parent)
@@ -43,7 +42,7 @@ void FrameStreamServer::flush()
     // Stop conversion thread and release any pending callback,
     // but keep the WebSocket server listening on the same port
     m_stopThread = true;
-    m_frameAvailable.wakeAll();
+    m_frameAvailable.notify_all();
 
     if (m_conversionThread && m_conversionThread->joinable()) {
         m_conversionThread->join();
@@ -51,7 +50,7 @@ void FrameStreamServer::flush()
     }
 
     {
-        QMutexLocker lock(&m_frameMutex);
+        std::unique_lock<std::mutex> lock(m_frameMutex);
         if (m_nextDoneCallback) {
             auto cb = m_nextDoneCallback;
             m_nextDoneCallback = nullptr;
@@ -72,7 +71,7 @@ void FrameStreamServer::flush()
 void FrameStreamServer::stop()
 {
     m_stopThread = true;
-    m_frameAvailable.wakeAll();
+    m_frameAvailable.notify_all();
 
     if (m_conversionThread && m_conversionThread->joinable()) {
         m_conversionThread->join();
@@ -80,7 +79,7 @@ void FrameStreamServer::stop()
     }
 
     {
-        QMutexLocker lock(&m_frameMutex);
+        std::unique_lock<std::mutex> lock(m_frameMutex);
         if (m_nextDoneCallback) {
             auto cb = m_nextDoneCallback;
             m_nextDoneCallback = nullptr;
@@ -101,7 +100,7 @@ void FrameStreamServer::stop()
 
 void FrameStreamServer::pushFrame(const BufferWrapper &buffer, std::function<void()> doneCallback)
 {
-    QMutexLocker lock(&m_frameMutex);
+    std::unique_lock<std::mutex> lock(m_frameMutex);
 
     // Release previous frame if still held
     if (m_nextDoneCallback) {
@@ -109,13 +108,13 @@ void FrameStreamServer::pushFrame(const BufferWrapper &buffer, std::function<voi
         m_nextDoneCallback = nullptr;
         lock.unlock();
         cb();
-        lock.relock();
+        lock.lock();
     }
 
     m_nextBuffer = buffer;
     m_nextDoneCallback = doneCallback;
     m_bufferReady = true;
-    m_frameAvailable.wakeOne();
+    m_frameAvailable.notify_one();
 }
 
 void FrameStreamServer::onNewConnection()
@@ -142,7 +141,7 @@ void FrameStreamServer::onClientTextMessage(const QString &msg)
 {
     if (msg == QStringLiteral("ack")) {
         m_clientReady = true;
-        m_frameAvailable.wakeOne();  // Wake conversion thread to process waiting frame
+        m_frameAvailable.notify_one();  // Wake conversion thread to process waiting frame
     }
 }
 
@@ -161,12 +160,12 @@ void FrameStreamServer::onBroadcast(const QByteArray &message)
 
 void FrameStreamServer::conversionThreadMain()
 {
-    m_frameMutex.lock();
+    std::unique_lock<std::mutex> lock(m_frameMutex);
     while (!m_stopThread) {
         // Wait for a frame to be available
-        while (!m_bufferReady && !m_stopThread) {
-            m_frameAvailable.wait(&m_frameMutex);
-        }
+        m_frameAvailable.wait(lock, [this] {
+            return m_bufferReady || m_stopThread;
+        });
         if (m_stopThread) break;
 
         // Frame available — but only take it if client can receive
@@ -176,7 +175,9 @@ void FrameStreamServer::conversionThreadMain()
             // releasing the old buffer's callback each time. This avoids
             // the tight busy-loop that occurred when we took + released
             // the buffer immediately.
-            m_frameAvailable.wait(&m_frameMutex);
+            m_frameAvailable.wait(lock, [this] {
+                return m_clientReady || m_stopThread;
+            });
             continue;  // Re-check all conditions from top
         }
 
@@ -185,7 +186,7 @@ void FrameStreamServer::conversionThreadMain()
         auto doneCallback = m_nextDoneCallback;
         m_nextDoneCallback = nullptr;
         m_bufferReady = false;
-        m_frameMutex.unlock();
+        lock.unlock();
 
         // Convert frame to QImage
         QImage convertedImage;
@@ -200,7 +201,7 @@ void FrameStreamServer::conversionThreadMain()
         }
 
         if (result != 0 || convertedImage.isNull()) {
-            m_frameMutex.lock();
+            lock.lock();
             continue;
         }
 
@@ -229,7 +230,6 @@ void FrameStreamServer::conversionThreadMain()
         }
         emit frameConverted(buffer.frameID, buffer.width, buffer.height);
 
-        m_frameMutex.lock();
+        lock.lock();
     }
-    m_frameMutex.unlock();
 }
