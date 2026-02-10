@@ -98,6 +98,18 @@ void FrameStreamServer::stop()
     m_pServer->close();
 }
 
+void FrameStreamServer::setRecordingCallback(RecordingCallback cb)
+{
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    m_recordingCallback = std::move(cb);
+}
+
+void FrameStreamServer::clearRecordingCallback()
+{
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    m_recordingCallback = nullptr;
+}
+
 void FrameStreamServer::pushFrame(const BufferWrapper &buffer, std::function<void()> doneCallback)
 {
     std::unique_lock<std::mutex> lock(m_frameMutex);
@@ -195,12 +207,11 @@ void FrameStreamServer::conversionThreadMain()
             buffer.width, buffer.height, buffer.pixelFormat,
             buffer.payloadSize, buffer.bytesPerLine, convertedImage);
 
-        // Release buffer back to FrameObserver immediately after conversion
-        if (doneCallback) {
-            doneCallback();
-        }
-
         if (result != 0 || convertedImage.isNull()) {
+            // Release buffer and skip
+            if (doneCallback) {
+                doneCallback();
+            }
             lock.lock();
             continue;
         }
@@ -211,6 +222,20 @@ void FrameStreamServer::conversionThreadMain()
         jpegBuffer.open(QIODevice::WriteOnly);
         convertedImage.save(&jpegBuffer, "JPEG", 80);
         jpegBuffer.close();
+
+        // Feed recording callback (if active) — BEFORE releasing buffer
+        // so raw data pointer is still valid
+        {
+            std::lock_guard<std::mutex> rlock(m_recordMutex);
+            if (m_recordingCallback) {
+                m_recordingCallback(jpegData, buffer);
+            }
+        }
+
+        // Release buffer back to FrameObserver after recording callback
+        if (doneCallback) {
+            doneCallback();
+        }
 
         // Build message: [width:u32][height:u32][frameId:u64][jpeg...]
         QByteArray message;

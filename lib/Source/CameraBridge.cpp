@@ -1,6 +1,7 @@
 #include "CameraBridge.h"
 #include "FrameStreamServer.h"
 #include "ImageTransform.h"
+#include "VideoRecorder.h"
 #include "V4L2Helper.h"
 
 #include <QDir>
@@ -371,6 +372,12 @@ QJsonObject CameraBridge::stopStreaming()
 {
     if (!m_bIsStreaming) {
         return makeResult(false, "Not streaming");
+    }
+
+    // Stop recording if active
+    if (m_recorder && m_recorder->isRecording()) {
+        m_pFrameServer->clearRecordingCallback();
+        m_recorder->stop();
     }
 
     // Set flag first so in-flight processor callbacks release immediately
@@ -817,6 +824,139 @@ QJsonObject CameraBridge::setControlString(int id, const QString &str)
     if (!m_bIsOpen) return makeResult(false, "No camera open");
     m_Camera.SetEnumerationControlValueString(static_cast<int32_t>(id), str);
     return makeResult(true);
+}
+
+// --- Recording ---
+
+QJsonObject CameraBridge::startRecording(const QString &path, const QString &format, double maxBytes)
+{
+    if (!m_bIsStreaming) {
+        return makeResult(false, "Not streaming");
+    }
+    if (m_recorder && m_recorder->isRecording()) {
+        return makeResult(false, "Already recording");
+    }
+
+    if (maxBytes > 0) {
+        m_maxRecordBytes = static_cast<qint64>(maxBytes);
+    }
+
+    VideoRecorder::Format fmt = VideoRecorder::AVI_MJPEG;
+    if (format.toLower() == "raw") {
+        fmt = VideoRecorder::RAW;
+    }
+
+    if (!m_recorder) {
+        m_recorder = new VideoRecorder(this);
+        connect(m_recorder, &VideoRecorder::recordingProgress, this,
+                [this](qint64 bytes, double elapsed) {
+            QJsonObject data;
+            data["bytesWritten"] = (double)bytes;
+            data["elapsedSec"] = elapsed;
+            data["maxBytes"] = (double)m_maxRecordBytes;
+            emit recordingProgress(data);
+        });
+        connect(m_recorder, &VideoRecorder::recordingStopped, this,
+                [this](const QString &reason) {
+            m_pFrameServer->clearRecordingCallback();
+            emit recordingStateChanged(false);
+            emit statusMessage("Recording stopped: " + reason);
+        });
+    }
+
+    // Get current frame dimensions and FPS
+    uint32_t width = m_latestWidth.load();
+    uint32_t height = m_latestHeight.load();
+    double fps = 30.0;
+    if (m_bIsOpen) {
+        uint32_t w2 = 0, h2 = 0;
+        m_Camera.ReadFrameSize(w2, h2);
+        if (w2 > 0) width = w2;
+        if (h2 > 0) height = h2;
+    }
+
+    if (!m_recorder->start(path, fmt, width, height, fps, m_maxRecordBytes)) {
+        return makeResult(false, "Failed to open file for recording");
+    }
+
+    // Set recording callback on frame server
+    if (fmt == VideoRecorder::AVI_MJPEG) {
+        m_pFrameServer->setRecordingCallback(
+            [this](const QByteArray &jpeg, const BufferWrapper &) {
+                if (m_recorder) {
+                    m_recorder->writeJpegFrame(jpeg);
+                }
+            });
+    } else {
+        m_pFrameServer->setRecordingCallback(
+            [this](const QByteArray &, const BufferWrapper &raw) {
+                if (m_recorder) {
+                    m_recorder->writeRawFrame(raw.data, raw.length);
+                }
+            });
+    }
+
+    emit recordingStateChanged(true);
+    emit statusMessage("Recording started: " + path);
+
+    QJsonObject result = makeResult(true);
+    result["path"] = path;
+    return result;
+}
+
+QJsonObject CameraBridge::stopRecording()
+{
+    if (!m_recorder || !m_recorder->isRecording()) {
+        return makeResult(false, "Not recording");
+    }
+
+    m_pFrameServer->clearRecordingCallback();
+    m_recorder->stop();
+    return makeResult(true);
+}
+
+QJsonObject CameraBridge::getRecordingState()
+{
+    QJsonObject result = makeResult(true);
+    bool recording = m_recorder && m_recorder->isRecording();
+    result["recording"] = recording;
+    if (recording) {
+        result["bytesWritten"] = (double)m_recorder->bytesWritten();
+        result["maxBytes"] = (double)m_maxRecordBytes;
+    }
+    return result;
+}
+
+QJsonObject CameraBridge::recordDialog(const QString &format, double maxBytes)
+{
+    if (!m_bIsStreaming) {
+        return makeResult(false, "Not streaming");
+    }
+    if (m_recorder && m_recorder->isRecording()) {
+        return makeResult(false, "Already recording");
+    }
+
+    QString filter;
+    QString defaultExt;
+    if (format.toLower() == "raw") {
+        filter = "Raw Video (*.raw)";
+        defaultExt = ".raw";
+    } else {
+        filter = "AVI Video (*.avi)";
+        defaultExt = ".avi";
+    }
+
+    QWidget *parentWidget = qobject_cast<QWidget *>(parent());
+    QString defaultName = QDir::homePath() + "/recording" + defaultExt;
+
+    QString fullPath = QFileDialog::getSaveFileName(
+        parentWidget, tr("Save Recording"), defaultName, filter);
+
+    if (fullPath.isEmpty()) {
+        return makeResult(false, "Recording cancelled");
+    }
+
+    return startRecording(fullPath, format, maxBytes);
 }
 
 // --- Save ---

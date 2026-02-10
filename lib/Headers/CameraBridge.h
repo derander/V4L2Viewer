@@ -11,6 +11,7 @@
 #include "BufferWrapper.h"
 
 class FrameStreamServer;
+class VideoRecorder;
 
 class CameraBridge : public QObject
 {
@@ -89,6 +90,12 @@ public:
     Q_INVOKABLE QJsonObject setControlIntList(int id, double val);
     Q_INVOKABLE QJsonObject setControlString(int id, const QString &str);
 
+    // Recording
+    Q_INVOKABLE QJsonObject startRecording(const QString &path, const QString &format, double maxBytes);
+    Q_INVOKABLE QJsonObject stopRecording();
+    Q_INVOKABLE QJsonObject getRecordingState();
+    Q_INVOKABLE QJsonObject recordDialog(const QString &format, double maxBytes);
+
     // Utility
     Q_INVOKABLE QJsonObject saveImage(const QString &path, const QString &format);
     Q_INVOKABLE QJsonObject saveImageDialog();
@@ -112,6 +119,8 @@ signals:
     void controlStateChanged(int id, bool enabled);
     void errorOccurred(const QString &message);
     void statusMessage(const QString &message);
+    void recordingStateChanged(bool recording);
+    void recordingProgress(const QJsonObject &data);
 
 private slots:
     void onCameraListChanged(const int &reason, unsigned int cardNumber,
@@ -161,6 +170,9 @@ private:
     QMutex m_lastFrameMutex;
     BufferWrapper m_lastFrame;
     std::function<void()> m_lastDoneCallback;
+
+    VideoRecorder *m_recorder = nullptr;
+    qint64 m_maxRecordBytes = 200 * 1024 * 1024; // 200MB default
 
     bool m_blockingMode = true;
     IO_METHOD_TYPE m_ioMethod = IO_METHOD_USERPTR;

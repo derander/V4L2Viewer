@@ -25,9 +25,11 @@
                 <toolbar
                     :is-open="isOpen"
                     :is-streaming="isStreaming"
+                    :is-recording="isRecording"
                     :zoom="zoom"
                     :flip-x="flipX"
                     :flip-y="flipY"
+                    :is-cropped="isCropped"
                     @start-stream="startStream"
                     @stop-stream="stopStream"
                     @zoom-in="zoomIn"
@@ -36,11 +38,17 @@
                     @snapshot="saveImage"
                     @flip-x="toggleFlipX"
                     @flip-y="toggleFlipY"
+                    @reset-crop="resetCrop"
+                    @start-record="startRecord"
+                    @stop-record="stopRecord"
+                    @toggle-settings="showSettings = !showSettings"
                 ></toolbar>
 
                 <frame-viewer
                     ref="frameViewer"
                     :is-streaming="isStreaming"
+                    :is-recording="isRecording"
+                    :recording-info="recordingInfo"
                     :frame-stream-port="frameStreamPort"
                     :zoom="zoom"
                     :flip-x="flipX"
@@ -48,6 +56,10 @@
                     :fps="fps"
                     :frame-info="frameInfo"
                     :pixel-formats="pixelFormats"
+                    :is-cropped="isCropped"
+                    @apply-crop="applyCropFromSelection"
+                    @reset-crop="resetCrop"
+                    @set-zoom="zoom = $event"
                 ></frame-viewer>
             </div>
 
@@ -93,6 +105,15 @@
             :frame-info="frameInfo"
             :status="statusText"
         ></status-bar>
+
+        <settings-panel
+            :show="showSettings"
+            :recording-format="recordingFormat"
+            :max-record-mb="maxRecordMb"
+            @close="showSettings = false"
+            @update:recording-format="recordingFormat = $event"
+            @update:max-record-mb="maxRecordMb = $event"
+        ></settings-panel>
     </div>
 
     <script src="qrc:/web/js/vue.global.prod.js"></script>

@@ -29,6 +29,10 @@ public:
 
     void pushFrame(const BufferWrapper &buffer, std::function<void()> doneCallback);
 
+    using RecordingCallback = std::function<void(const QByteArray &jpeg, const BufferWrapper &raw)>;
+    void setRecordingCallback(RecordingCallback cb);
+    void clearRecordingCallback();
+
 signals:
     void frameConverted(uint64_t frameId, uint32_t width, uint32_t height);
     void broadcastReady(const QByteArray &message);
@@ -49,6 +53,9 @@ private:
     std::atomic<bool> m_stopThread{false};
     std::atomic<bool> m_broadcastPending{false};
     std::atomic<bool> m_clientReady{true};
+
+    std::mutex m_recordMutex;
+    RecordingCallback m_recordingCallback;
 
     std::mutex m_frameMutex;
     std::condition_variable m_frameAvailable;

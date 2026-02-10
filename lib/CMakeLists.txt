@@ -147,11 +147,13 @@ if(Qt6_FOUND)
       ${HEADERS_PATH}/CameraBridge.h
       ${HEADERS_PATH}/WebViewerWindow.h
       ${HEADERS_PATH}/FrameStreamServer.h
+      ${HEADERS_PATH}/VideoRecorder.h
     )
     list(APPEND SOURCE_FILES
       ${SOURCES_PATH}/CameraBridge.cpp
       ${SOURCES_PATH}/WebViewerWindow.cpp
       ${SOURCES_PATH}/FrameStreamServer.cpp
+      ${SOURCES_PATH}/VideoRecorder.cpp
     )
     list(APPEND QT_RESOURCES ${RESOURCES_PATH}/V4L2WebViewer.qrc)
   endif()
@@ -174,11 +176,13 @@ else()
       ${HEADERS_PATH}/CameraBridge.h
       ${HEADERS_PATH}/WebViewerWindow.h
       ${HEADERS_PATH}/FrameStreamServer.h
+      ${HEADERS_PATH}/VideoRecorder.h
     )
     list(APPEND SOURCE_FILES
       ${SOURCES_PATH}/CameraBridge.cpp
       ${SOURCES_PATH}/WebViewerWindow.cpp
       ${SOURCES_PATH}/FrameStreamServer.cpp
+      ${SOURCES_PATH}/VideoRecorder.cpp
     )
     list(APPEND QT_RESOURCES ${RESOURCES_PATH}/V4L2WebViewer.qrc)
   endif()
